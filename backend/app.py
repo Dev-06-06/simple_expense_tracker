@@ -1,8 +1,9 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from dotenv import load_dotenv
 from db_mongo import get_db_collection
 from bson import ObjectId # To handle MongoDB's _id
-
+load_dotenv() # Loads variables from .env file
 app = Flask(__name__)
 CORS(app) # Allow requests from our React frontend
 
