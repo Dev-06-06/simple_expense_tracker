@@ -5,7 +5,7 @@ from db_mongo import get_db_collection
 from bson import ObjectId # To handle MongoDB's _id
 load_dotenv() # Loads variables from .env file
 app = Flask(__name__)
-CORS(app) # Allow requests from our React frontend
+CORS(app, resources={r"/api/*": {"origins": "https://simple-expense-tracker-neon.vercel.app"}})
 
 expenses_collection = get_db_collection()
 
