@@ -84,7 +84,7 @@ const GlobalStyles = () => (
 );
 
 // This is the URL of your Flask backend. When you deploy, this will change.
-const API_URL = 'http://127.0.0.1:5000/api/expenses';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api/expenses';
 
 // The main App component that holds the entire application
 function App() {
