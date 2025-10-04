@@ -1,23 +1,28 @@
 import React, { useState, useEffect } from 'react';
 
 // --- Styles ---
+// This component injects all the necessary CSS into the page.
 const GlobalStyles = () => (
   <style>{`
-    body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
     .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    h1, h2 { color: #333; }
+    h1, h2 { color: #1c2b33; }
     form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-    input, select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-    button { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    input, select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
+    button { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; font-weight: bold; }
     button:hover { background: #0056b3; }
     .expense-list { list-style: none; padding: 0; }
-    .expense-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
-    .expense-item span { font-size: 1.1em; }
-    .expense-item .amount { font-weight: bold; }
+    .expense-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+    .expense-item:last-child { border-bottom: none; }
+    .expense-details { display: flex; flex-direction: column; }
+    .expense-details .description { font-weight: bold; }
+    .expense-details .category { font-size: 0.8em; color: #666; }
+    .expense-item .amount { font-weight: bold; font-size: 1.1em; color: #dc3545; }
   `}</style>
 );
 
-// This is the base URL for our backend, read from the environment variable
+// Read the backend API URL from the environment variable set in Vercel.
+// It falls back to the local URL for development.
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
 function App() {
@@ -26,10 +31,19 @@ function App() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
 
+  // Function to fetch the list of expenses from the backend
   const fetchExpenses = async () => {
     try {
-      // CORRECTED: The full path to the endpoint is now used
-      const response = await fetch(`${API_BASE_URL}/api/expenses`);
+      // THE FIX: "Cache Busting"
+      // We add a unique timestamp to the end of the GET request URL.
+      // This makes the URL different every time, forcing the browser and Vercel
+      // to bypass any cached (old) data and get the freshest list from our server.
+      const response = await fetch(`${API_BASE_URL}/api/expenses?_=${new Date().getTime()}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       setExpenses(data);
     } catch (error) {
@@ -37,10 +51,12 @@ function App() {
     }
   };
 
+  // useEffect hook runs once when the component first loads
   useEffect(() => {
     fetchExpenses();
   }, []);
 
+  // Function to handle the form submission when adding a new expense
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newExpense = {
@@ -51,7 +67,8 @@ function App() {
     };
 
     try {
-      // CORRECTED: The full path to the endpoint is now used
+      // The POST request to add a new expense.
+      // POST requests are not cached, so they don't need the cache-busting trick.
       const response = await fetch(`${API_BASE_URL}/api/expenses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,9 +76,12 @@ function App() {
       });
 
       if (response.ok) {
+        // Clear the form and re-fetch the expenses to update the list
         setDescription('');
         setAmount('');
         fetchExpenses();
+      } else {
+        console.error("Failed to add expense, server responded with:", response.status);
       }
     } catch (error) {
       console.error("Failed to add expense:", error);
@@ -75,8 +95,22 @@ function App() {
         <h1>Simple Expense Tracker</h1>
         <form onSubmit={handleSubmit}>
           <h2>Add New Expense</h2>
-          <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description" required />
-          <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Amount" min="0.01" step="0.01" required />
+          <input 
+            type="text" 
+            value={description} 
+            onChange={e => setDescription(e.target.value)} 
+            placeholder="e.g., Coffee with team" 
+            required 
+          />
+          <input 
+            type="number" 
+            value={amount} 
+            onChange={e => setAmount(e.target.value)} 
+            placeholder="Amount" 
+            min="0.01" 
+            step="0.01" 
+            required 
+          />
           <select value={category} onChange={e => setCategory(e.target.value)}>
             <option>Food</option>
             <option>Transport</option>
@@ -91,7 +125,10 @@ function App() {
         <ul className="expense-list">
           {expenses.map(exp => (
             <li key={exp._id} className="expense-item">
-              <span>{exp.description} ({exp.category})</span>
+              <div className="expense-details">
+                <span className="description">{exp.description}</span>
+                <span className="category">{exp.category}</span>
+              </div>
               <span className="amount">₹{exp.amount.toFixed(2)}</span>
             </li>
           ))}
