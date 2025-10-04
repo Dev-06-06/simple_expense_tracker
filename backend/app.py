@@ -5,7 +5,7 @@ from db_mongo import get_db_collection
 from bson import ObjectId # To handle MongoDB's _id
 load_dotenv() # Loads variables from .env file
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": ["https://*.vercel.app", "http://localhost:5173"]}})
+CORS(app)
 expenses_collection = get_db_collection()
 
 # Endpoint to GET all expenses
